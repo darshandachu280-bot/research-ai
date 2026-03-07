@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchAI Pro - Cyber Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
+
+        :root {
+            --bg: #05050a;
+            --sidebar-bg: #0d0c1d;
+            --accent: #7000ff;
+            --neon-cyan: #00d4ff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* LAYOUT RESET & SCROLL FIX */
+        body, html {
+            margin: 0; padding: 0; font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(circle at 10% 20%, #1a103d 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, #120c29 0%, transparent 40%);
+            color: #fff; height: 100vh; width: 100vw; overflow: hidden; display: flex;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px; background: var(--sidebar-bg); backdrop-filter: blur(40px);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0;
+        }
+        .logo-area { padding: 35px 25px; font-size: 22px; font-weight: 800; color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 212, 255, 0.3); }
+        
+        .nav-section { flex-grow: 1; padding: 10px; }
+        .nav-item { 
+            padding: 14px 20px; color: #8a899c; cursor: pointer; transition: 0.3s; 
+            display: flex; align-items: center; gap: 12px; font-size: 14px; border-radius: 12px; margin-bottom: 5px;
+        }
+        .nav-item:hover, .nav-item.active { color: #fff; background: rgba(255, 255, 255, 0.05); }
+        .nav-item.active { border-left: 3px solid var(--neon-cyan); border-radius: 0 12px 12px 0; }
+
+        /* MAIN WORKSPACE */
+        .main { flex-grow: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        
+        .header {
+            height: 70px; padding: 0 40px; display: flex; justify-content: space-between; 
+            align-items: center; border-bottom: 1px solid var(--border);
+        }
+
+        .profile-trigger { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 5px 15px; border-radius: 40px; transition: 0.3s; }
+        .profile-trigger:hover { background: rgba(255,255,255,0.05); }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--neon-cyan); background: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* GRID WORKSPACE */
+        .workspace {
+            display: grid; grid-template-columns: 320px 1fr; gap: 25px; 
+            padding: 25px 40px 40px; flex-grow: 1; min-height: 0;
+        }
+
+        .glass-pane {
+            background: var(--glass); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--border); border-radius: 24px; display: flex; flex-direction: column;
+            height: 100%; overflow: hidden; transition: 0.4s;
+        }
+        .glass-pane:hover { border-color: rgba(0, 212, 255, 0.4); box-shadow: 0 0 30px rgba(0, 212, 255, 0.1); }
+
+        /* Library Fixes */
+        .upload-card {
+            margin: 20px; padding: 20px; border: 1px dashed #444; border-radius: 20px;
+            text-align: center; cursor: pointer; transition: 0.3s; flex-shrink: 0;
+        }
+        .upload-card:hover { border-color: var(--neon-cyan); background: rgba(0, 212, 255, 0.05); }
+        
+        #file-list { flex-grow: 1; overflow-y: auto; padding: 0 20px 20px; }
+        .file-item { 
+            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; 
+            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent;
+        }
+        .file-item:hover { border-color: var(--neon-cyan); }
+
+        /* CHAT/SEARCH MESSAGES */
+        #msgs { flex-grow: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .msg { padding: 15px 22px; border-radius: 20px; font-size: 14px; line-height: 1.6; max-width: 85%; border: 1px solid var(--border); }
+        .ai { align-self: flex-start; background: rgba(255,255,255,0.02); border-bottom-left-radius: 2px; }
+        .user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 2px; }
+
+        /* STICKY INPUT AREA */
+        .input-bar { 
+            padding: 20px 40px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border); 
+            display: flex; gap: 15px; align-items: center; flex-shrink: 0;
+        }
+        input { flex: 1; background: #000; border: 1px solid #333; padding: 14px 20px; border-radius: 15px; color: #fff; outline: none; }
+        input:focus { border-color: var(--neon-cyan); }
+
+        .btn-action { background: var(--neon-cyan); color: #000; border: none; padding: 10px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-action:hover { box-shadow: 0 0 15px var(--neon-cyan); }
+
+        /* Speech Indicator */
+        .mic-btn { background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 20px; transition: 0.3s; }
+        .mic-active { color: #ff4d4d; filter: drop-shadow(0 0 10px #ff4d4d); }
+
+        /* Modals */
+        .modal { display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; backdrop-filter: blur(10px); }
+        .modal-content { background: #0d0c1d; padding: 35px; border-radius: 30px; max-width: 480px; width: 90%; border: 1px solid var(--neon-cyan); }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-area">RESEARCH AI</div>
+        <div class="nav-section">
+            <div class="nav-item active" onclick="openDocuments()"><i class="fas fa-folder"></i> Documents</div>
+            <!-- Updated to Search History -->
+            
+            <!-- Updated to Clear History -->
+            <div class="nav-item" onclick="clearSearchHistory()"><i class="fas fa-trash-alt"></i> Clear History</div>
+        </div>
+        <div class="nav-item" style="margin-top:auto; padding-bottom:40px; color: #ff4d4d;" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <div class="header">
+            <div id="cur-f" style="color: var(--neon-cyan); font-weight: bold; font-size: 14px; letter-spacing: 1px;">NODE: MASTER_CONTEXT</div>
+            <div class="profile-trigger" onclick="openSettings()">
+                <div style="text-align: right"><div id="u-display" style="font-size: 13px; font-weight: bold">User</div><div style="font-size: 9px; color: #777">Researcher</div></div>
+                <div id="u-avatar" class="avatar">?</div>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <!-- Library -->
+            <div class="glass-pane">
+                <div class="upload-card" onclick="document.getElementById('fi').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: var(--neon-cyan); margin-bottom: 10px; display: block;"></i>
+                    <p style="font-size: 11px; font-weight: bold;">UPLOAD DATASET</p>
+                    <input type="file" id="fi" multiple hidden accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt" onchange="up()">
+                </div>
+                <div id="file-list"></div>
+            </div>
+
+            <!-- Chat / Search Window -->
+            <div class="glass-pane">
+                <div style="padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                    <button class="btn-action" style="background: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); font-size: 11px;" onclick="sum()" id="sumBtn">AI SUMMARY</button>
+                    <!-- Updated reset button -->
+                    <button class="btn-action" style="background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; font-size: 10px;" onclick="clearSearchHistory()">CLEAR HISTORY</button>
+                </div>
+                <div id="msgs"></div>
+                <div class="input-bar">
+                    <button id="micBtn" class="mic-btn" onclick="startVoice()"><i class="fas fa-microphone"></i></button>
+                    <input type="text" id="qi" placeholder="Search your documents..." onkeypress="if(event.key=='Enter') ask()">
+                    <!-- Updated button text to SEARCH AI -->
+                    <button class="btn-action" onclick="ask()">SEARCH AI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="setMod" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--neon-cyan); margin-top: 0">Research Profile</h2>
+            <label style="font-size: 11px; color: #777">IDENTITY</label>
+            <input type="text" id="newName" style="width: 100%; background: #000; border: 1px solid var(--border); padding: 12px; border-radius: 12px; color: #fff; margin: 10px 0; outline: none;">
+            <label style="font-size: 11px; color: #777">AVATAR UPDATE</label>
+            <input type="file" id="newPic" accept="image/*" style="margin: 10px 0; font-size: 11px;">
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-action" style="flex: 1" onclick="saveProfile()">UPDATE CORE</button>
+                <button class="btn-action" style="flex: 1; background: #222; color: #777" onclick="document.getElementById('setMod').style.display='none'">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const h = { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+        let activeFocus = null;
+
+        // Smooth Typing (Zero Blink)
+        async function smoothType(el, txt) {
+            el.innerHTML = ""; const words = txt.split(" ");
+            for(let w of words) {
+                el.innerHTML += w + " "; document.getElementById('msgs').scrollTop = 99999;
+                await new Promise(r => setTimeout(r, 45));
+            }
+            el.innerHTML = marked.parse(txt);
+        }
+
+        async function init() {
+            try {
+                // Load User
+                const r = await fetch('http://localhost:8000/me', { headers: h });
+                if (!r.ok) window.location.href = 'login.html';
+                const u = await r.json();
+                
+                document.getElementById('u-display').innerText = u.name;
+                document.getElementById('newName').value = u.name;
+                
+                if(u.profile_pic) {
+                    document.getElementById('u-avatar').innerHTML = `<img src="http://localhost:8000${u.profile_pic}">`;
+                } else {
+                    document.getElementById('u-avatar').innerText = u.name[0].toUpperCase();
+                }
+
+                // Initial Load of Data
+                await loadDocs(); 
+                await loadSearchHistory();
+                
+                // Poll for updates (every 15s)
+                setInterval(loadDocs, 15000);
+
+            } catch(e) { console.error("Init failed:", e); }
+        }
+
+        // --- UPLOAD FUNCTION ---
+        async function up() {
+            const fi = document.getElementById('fi');
+            if (fi.files.length === 0) return;
+
+            const fd = new FormData();
+            for (let i = 0; i < fi.files.length; i++) {
+                fd.append('files', fi.files[i]); 
+            }
+
+            const card = document.querySelector('.upload-card p');
+            const originalText = card.innerText;
+            card.innerText = "UPLOADING...";
+
+            try {
+                const r = await fetch('http://localhost:8000/upload', { 
+                    method: 'POST', 
+                    headers: h, 
+                    body: fd 
+                });
+
+                if (r.ok) {
+                    await loadDocs(); 
+                } else {
+                    alert("Upload failed. Check server logs.");
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Connection error during upload.");
+            }
+
+            card.innerText = originalText;
+            fi.value = ''; 
+        }
+
+        // --- DOCUMENT LOADER ---
+        async function loadDocs() {
+            try {
+                const r = await fetch('http://localhost:8000/documents', { headers: h });
+                let docs = await r.json();
+                
+                if (!Array.isArray(docs)) {
+                    docs = docs.documents ||[];
+                }
+
+                const list = document.getElementById('file-list');
+                list.innerHTML = ""; 
+
+                docs.forEach(d => {
+                    const fname = d.filename || d.name || "Unknown File";
+                    const fid = d.id; 
+
+                    list.innerHTML += `<div class="file-item">
+                        <div style="font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; width: 140px;" title="${fname}">${fname}</div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <!-- Updated generic term Focus to Search -->
+                            <button class="btn-action" style="padding:4px 10px; font-size:9px" onclick="activeFocus='${fname}'; document.getElementById('cur-f').innerText='Searching: ' + '${fname}'">SEARCH</button>
+                            <i class="fas fa-times" style="color:red; cursor:pointer" onclick="delDoc(${fid})"></i>
+                        </div>
+                    </div>`;
+                });
+            } catch(e) {
+                console.error("Error fetching docs:", e);
+            }
+        }
+
+        async function delDoc(id) { 
+            if(confirm("Delete Document?")) { 
+                await fetch(`http://localhost:8000/documents/${id}`, { method: 'DELETE', headers: h }); 
+                loadDocs(); 
+            } 
+        }
+
+        // --- SIDEBAR NAVIGATION FUNCTIONS ---
+        function openDocuments() {
+            const navItems = document.querySelectorAll('.nav-section .nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            navItems[0].classList.add('active');
+            
+            activeFocus = null;
+            document.getElementById('cur-f').innerText = 'NODE: MASTER_CONTEXT';
+        }
+
+        async function openSearchHistory() {
+            const navItems = document.querySelectorAll('.nav-section .nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            navItems[1].classList.add('active');
+            
+            activeFocus = null;
+            document.getElementById('cur-f').innerText = 'NODE: MASTER_CONTEXT';
+            
+            const msgsDiv = document.getElementById('msgs');
+            msgsDiv.innerHTML = "<div style='color: var(--neon-cyan); text-align: center; margin-top: 20px; font-size: 12px;'>Loading search history...</div>";
+            
+            await loadSearchHistory();
+        }
+
+        // --- SEARCH FUNCTIONS ---
+        async function ask() {
+            const qi = document.getElementById('qi');
+            const q = qi.value.trim(); if (!q) return;
+            qi.value = ''; appendInstant('user', `<i class="fas fa-search" style="font-size: 12px; margin-right: 5px;"></i> ` + q);
+            const aiDiv = appendInstant('ai', "Searching Node...");
+            
+            const fd = new FormData(); 
+            fd.append('question', q); 
+            if (activeFocus) fd.append('focus_file', activeFocus);
+            
+            try {
+                const r = await fetch('http://localhost:8000/ask', { method:'POST', headers: h, body: fd });
+                const d = await r.json();
+                await smoothType(aiDiv, d.answer);
+            } catch(e) {
+                aiDiv.innerHTML = "Error contacting Search Node.";
+            }
+        }
+
+        function appendInstant(type, txt) {
+            const m = document.getElementById('msgs'), d = document.createElement('div');
+            d.className = `msg ${type}`; d.innerHTML = (type==='ai' ? marked.parse(txt) : txt);
+            m.appendChild(d); m.scrollTop = 99999; return d;
+        }
+
+        async function loadSearchHistory() {
+            try {
+                const r = await fetch('http://localhost:8000/chat-history', { headers: h });
+                const hist = await r.json();
+                document.getElementById('msgs').innerHTML = "";
+                
+                if (hist.length === 0) {
+                    document.getElementById('msgs').innerHTML = "<div style='color: #777; text-align: center; margin-top: 20px; font-size: 12px;'>No search history available.</div>";
+                    return;
+                }
+                
+                hist.forEach(c => { 
+                    // Emphasizing the search intent by adding an icon to the user prompt history
+                    appendInstant('user', `<i class="fas fa-search" style="font-size: 12px; margin-right: 5px;"></i> ` + c.question); 
+                    appendInstant('ai', c.answer); 
+                });
+            } catch(e) { console.error("No search history or offline"); }
+        }
+
+        async function sum() { 
+            const btn = document.getElementById('sumBtn'); 
+            const originalTxt = btn.innerText;
+            btn.innerText = "analyzing..."; 
+            try {
+                const r = await fetch('http://localhost:8000/summarize', { method:'POST', headers: h }); 
+                const d = await r.json(); 
+                await smoothType(appendInstant('ai', "### SUMMARY\n"), d.summary); 
+            } catch(e) { alert("Summarization failed"); }
+            btn.innerText = originalTxt; 
+        }
+
+        function openSettings() { document.getElementById('setMod').style.display = 'flex'; }
+        
+        async function saveProfile() { 
+            const fd = new FormData(); 
+            fd.append('name', document.getElementById('newName').value); 
+            fd.append('role', "Researcher"); 
+            const pic = document.getElementById('newPic').files[0]; 
+            if(pic) fd.append('pic', pic); 
+            
+            await fetch('http://localhost:8000/update-profile', { method:'POST', headers: h, body: fd }); 
+            location.reload(); 
+        }
+
+        async function clearSearchHistory() { 
+            if(confirm("Clear all previous search history?")) { 
+                await fetch('http://localhost:8000/chat-history', { method:'DELETE', headers: h }); 
+                loadSearchHistory(); 
+            } 
+        }
+        
+        function startVoice() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Mic not supported");
+            const rec = new SpeechRecognition();
+            const mic = document.getElementById('micBtn');
+            rec.onstart = () => mic.classList.add('mic-active');
+            rec.onresult = (e) => { document.getElementById('qi').value = e.results[0][0].transcript; ask(); };
+            rec.onend = () => mic.classList.remove('mic-active');
+            rec.start();
+        }
+
+        function logout() { localStorage.clear(); window.location.href='login.html'; }
+        
+        init();
+    </script>
+</body>
+</html>

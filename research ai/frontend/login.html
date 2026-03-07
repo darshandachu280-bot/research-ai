@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchAI - Secure Access</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- INTEGRATING YOUR style.css --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Poppins', sans-serif; color: #fff;
+        }
+
+        body {
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; min-height: 100vh; 
+            background: #050505; /* Base background */
+            padding: 20px; overflow: hidden;
+            position: relative;
+        }
+
+        /* --- NEW: BACKGROUND CANVAS --- */
+        #neural-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Sits behind the wrapper */
+        }
+
+        .auth-wrapper {
+            position: relative; width: 100%; max-width: 850px;
+            height: 550px; border: 2px solid #00d4ff;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.2);
+            overflow: hidden; background: rgba(15, 15, 15, 0.9); /* Slightly transparent */
+            border-radius: 10px;
+            z-index: 10; /* Sits on top of canvas */
+            backdrop-filter: blur(5px); /* Professional glass effect */
+        }
+
+        .auth-wrapper .credentials-panel {
+            position: absolute; top: 0; width: 50%; height: 100%;
+            display: flex; justify-content: center; flex-direction: column; z-index: 5;
+        }
+
+        .credentials-panel.signin { left: 0; padding: 0 40px; }
+        .credentials-panel.signup { right: 0; padding: 0 40px; }
+
+        /* Staggered Slide Elements */
+        .slide-element { transform: translateX(0%); transition: .7s; opacity: 1; filter: blur(0px); }
+
+        /* Sign In Animation Delays */
+        .credentials-panel.signin .slide-element:nth-child(1) { transition-delay: 2.1s; }
+        .credentials-panel.signin .slide-element:nth-child(2) { transition-delay: 2.2s; }
+        .credentials-panel.signin .slide-element:nth-child(3) { transition-delay: 2.3s; }
+        .credentials-panel.signin .slide-element:nth-child(4) { transition-delay: 2.4s; }
+
+        /* Sign Up Initial State (Hidden) */
+        .credentials-panel.signup .slide-element { transform: translateX(120%); opacity: 0; filter: blur(10px); }
+
+        /* TOGGLED STATE LOGIC */
+        .auth-wrapper.toggled .credentials-panel.signin .slide-element { transform: translateX(-120%); opacity: 0; filter: blur(10px); transition-delay: 0s; }
+        
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element {
+            transform: translateX(0%); opacity: 1; filter: blur(0px);
+        }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(1) { transition-delay: 1.7s; }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(2) { transition-delay: 1.8s; }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(3) { transition-delay: 1.9s; }
+        .auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(4) { transition-delay: 2.0s; }
+
+        .credentials-panel h2 { font-size: 32px; text-align: center; margin-bottom: 10px; }
+
+        .field-wrapper { position: relative; width: 100%; height: 50px; margin-top: 25px; }
+        .field-wrapper input {
+            width: 100%; height: 100%; background: transparent; border: none; outline: none;
+            font-size: 16px; color: #fff; font-weight: 600; border-bottom: 2px solid #fff;
+            padding-right: 23px; transition: .5s;
+        }
+        .field-wrapper input:focus, .field-wrapper input:valid { border-bottom: 2px solid #00d4ff; }
+        .field-wrapper label {
+            position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+            font-size: 16px; color: #fff; transition: .5s; pointer-events: none;
+        }
+        .field-wrapper input:focus~label, .field-wrapper input:valid~label { top: -5px; color: #00d4ff; font-size: 13px; }
+        .field-wrapper i { position: absolute; top: 50%; right: 0; font-size: 18px; transform: translateY(-50%); color: #fff; }
+        .field-wrapper input:focus~i, .field-wrapper input:valid~i { color: #00d4ff; }
+
+        .submit-button {
+            position: relative; width: 100%; height: 45px; background: transparent;
+            border-radius: 40px; cursor: pointer; font-size: 16px; font-weight: 600;
+            border: 2px solid #00d4ff; overflow: hidden; z-index: 1; margin-top: 30px;
+        }
+        .submit-button::before {
+            content: ""; position: absolute; height: 300%; width: 100%;
+            background: linear-gradient(#1a1a2e, #00d4ff, #1a1a2e, #00d4ff);
+            top: -100%; left: 0; z-index: -1; transition: .5s;
+        }
+        .submit-button:hover:before { top: 0; }
+
+        .switch-link { font-size: 14px; text-align: center; margin: 20px 0 10px; }
+        .switch-link a { text-decoration: none; color: #00d4ff; font-weight: 600; }
+
+        /* Welcome Sections */
+        .welcome-section { position: absolute; top: 0; height: 100%; width: 50%; display: flex; justify-content: center; flex-direction: column; z-index: 10; pointer-events: none;}
+        .welcome-section.signin { right: 0; text-align: right; padding: 0 40px 60px 100px; }
+        .welcome-section.signup { left: 0; text-align: left; padding: 0 100px 60px 40px; opacity: 0; transform: translateX(-120%); transition: .7s;}
+
+        .auth-wrapper.toggled .welcome-section.signin { transform: translateX(120%); opacity: 0; }
+        .auth-wrapper.toggled .welcome-section.signup { transform: translateX(0); opacity: 1; transition-delay: 1.7s; }
+
+        .welcome-section h2 { font-size: 36px; text-transform: uppercase; line-height: 1.2; }
+        .welcome-section p { font-size: 14px; margin-top: 10px; }
+
+        /* Background Shapes */
+        .background-shape {
+            position: absolute; right: 0; top: -5px; height: 700px; width: 900px;
+            background: linear-gradient(45deg, #1a1a2e, #00d4ff);
+            transform: rotate(10deg) skewY(40deg); transform-origin: bottom right;
+            transition: 1.5s ease; transition-delay: 1.6s; z-index: 2;
+        }
+        .auth-wrapper.toggled .background-shape { transform: rotate(0deg) skewY(0deg); transition-delay: .5s; }
+
+        .secondary-shape {
+            position: absolute; left: 250px; top: 100%; height: 700px; width: 900px;
+            background: #0f0f0f; border-top: 3px solid #00d4ff;
+            transform: rotate(0deg) skewY(0deg); transform-origin: bottom left;
+            transition: 1.5s ease; transition-delay: .5s; z-index: 2;
+        }
+        .auth-wrapper.toggled .secondary-shape { transform: rotate(-11deg) skewY(-41deg); transition-delay: 1.2s; }
+
+        .footer { margin-top: 30px; font-size: 14px; z-index: 10; }
+        .footer a { color: #00d4ff; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <!-- INTERACTIVE BACKGROUND -->
+    <canvas id="neural-bg"></canvas>
+
+    <div class="auth-wrapper">
+        <div class="background-shape"></div>
+        <div class="secondary-shape"></div>
+
+        <!-- Sign In Panel -->
+        <div class="credentials-panel signin">
+            <h2 class="slide-element">Login</h2>
+            <form id="loginForm">
+                <div class="field-wrapper slide-element">
+                    <input type="email" id="l-email" required>
+                    <label>Email</label>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="field-wrapper slide-element">
+                    <input type="password" id="l-pass" required>
+                    <label>Password</label>
+                    <i class="fas fa-lock"></i>
+                </div>
+                <button type="submit" class="submit-button slide-element">Sign In</button>
+                <div class="switch-link slide-element">
+                    Don't have an account? <a href="#" class="register-trigger">Sign Up</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sign Up Panel -->
+        <div class="credentials-panel signup">
+            <h2 class="slide-element">Register</h2>
+            <form id="regForm">
+                <div class="field-wrapper slide-element">
+                    <input type="text" id="r-name" required>
+                    <label>Full Name</label>
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="field-wrapper slide-element">
+                    <input type="email" id="r-email" required>
+                    <label>Email Address</label>
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="field-wrapper slide-element">
+                    <input type="password" id="r-pass" required>
+                    <label>Password</label>
+                    <i class="fas fa-lock"></i>
+                </div>
+                <button type="submit" class="submit-button slide-element">Register</button>
+                <div class="switch-link slide-element">
+                    Already have an account? <a href="#" class="login-trigger">Sign In</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Welcome Sections -->
+        <div class="welcome-section signin">
+            <h2 class="slide-element">WELCOME <br> BACK!</h2>
+            <p class="slide-element">Analyze your documents with the power of AI.</p>
+        </div>
+
+        <div class="welcome-section signup">
+            <h2 class="slide-element">WELCOME!</h2>
+            <p class="slide-element">Create an account to start your AI-powered research.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        ResearchAI Assistant &copy; 2026 | <a href="#">Final Year Project</a>
+    </div>
+
+    <script>
+        /* --- DYNAMIC NEURAL BACKGROUND ANIMATION --- */
+        const canvas = document.getElementById('neural-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const properties = {
+            count: 100,
+            particleColor: 'rgba(0, 212, 255, 0.5)',
+            lineColor: 'rgba(0, 212, 255, 0.1)',
+            particleRadius: 3,
+            maxVelocity: 0.5,
+            lineMaxDist: 150,
+            mouseDist: 200
+        };
+
+        let mouse = { x: null, y: null };
+
+        window.onmousemove = (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        };
+
+        window.onresize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            init();
+        };
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.velocityX = (Math.random() * (properties.maxVelocity * 2)) - properties.maxVelocity;
+                this.velocityY = (Math.random() * (properties.maxVelocity * 2)) - properties.maxVelocity;
+            }
+
+            position() {
+                if (this.x + this.velocityX > canvas.width || this.x + this.velocityX < 0) this.velocityX *= -1;
+                if (this.y + this.velocityY > canvas.height || this.y + this.velocityY < 0) this.velocityY *= -1;
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+            }
+
+            reDraw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, properties.particleRadius, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fillStyle = properties.particleColor;
+                ctx.fill();
+            }
+        }
+
+        function drawLines() {
+            let x, y, dist, opacity;
+            for (let i in particles) {
+                for (let j in particles) {
+                    x = particles[i].x - particles[j].x;
+                    y = particles[i].y - particles[j].y;
+                    dist = Math.sqrt(x * x + y * y);
+
+                    if (dist < properties.lineMaxDist) {
+                        opacity = 1 - (dist / properties.lineMaxDist);
+                        ctx.lineWidth = '0.5';
+                        ctx.strokeStyle = properties.lineColor.replace('0.1', opacity * 0.3);
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                }
+                
+                // Mouse Interaction
+                if (mouse.x) {
+                    x = particles[i].x - mouse.x;
+                    y = particles[i].y - mouse.y;
+                    dist = Math.sqrt(x * x + y * y);
+                    if (dist < properties.mouseDist) {
+                        ctx.strokeStyle = properties.lineColor.replace('0.1', 0.5);
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function init() {
+            particles = [];
+            for (let i = 0; i < properties.count; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i in particles) {
+                particles[i].position();
+                particles[i].reDraw();
+            }
+            drawLines();
+            requestAnimationFrame(loop);
+        }
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        init();
+        loop();
+
+        /* --- UI TOGGLE LOGIC --- */
+        const authWrapper = document.querySelector('.auth-wrapper');
+        const loginTrigger = document.querySelector('.login-trigger');
+        const registerTrigger = document.querySelector('.register-trigger');
+
+        registerTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            authWrapper.classList.add('toggled');
+        });
+
+        loginTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            authWrapper.classList.remove('toggled');
+        });
+
+        /* --- BACKEND LOGIC --- */
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('email', document.getElementById('l-email').value);
+            fd.append('password', document.getElementById('l-pass').value);
+            const res = await fetch("http://localhost:8000/login", { method: 'POST', body: fd });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('token', data.access_token);
+                window.location.href = 'app.html';
+            } else { alert("Login failed"); }
+        };
+
+        document.getElementById('regForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('name', document.getElementById('r-name').value);
+            fd.append('email', document.getElementById('r-email').value);
+            fd.append('password', document.getElementById('r-pass').value);
+            const res = await fetch("http://localhost:8000/register", { method: 'POST', body: fd });
+            if (res.ok) { 
+                alert("Success! Please Sign In.");
+                authWrapper.classList.remove('toggled');
+            }
+        };
+    </script>
+</body>
+</html>
