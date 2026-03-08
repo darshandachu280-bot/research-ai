@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+pypdf
+sentence-transformers
+faiss-cpu
+numpy
+transformers
+torch
+python-docx
+python-pptx
+openpyxl
+groq
