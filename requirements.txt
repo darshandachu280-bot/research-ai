@@ -1,4 +1,5 @@
 fastapi
+pandas
 uvicorn
 sqlalchemy
 python-multipart
@@ -11,6 +12,7 @@ numpy
 transformers
 torch
 python-docx
+
 python-pptx
 openpyxl
 groq
