@@ -8,6 +8,7 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 pypdf
+PyPDF2
 sentence-transformers
 faiss-cpu
 numpy
