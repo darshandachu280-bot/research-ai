@@ -2,9 +2,7 @@ fastapi
 uvicorn
 pandas
 groq
-python-dotenvfastapi
-pandas
-uvicorn
+python-dotenv
 sqlalchemy
 python-multipart
 python-jose[cryptography]
@@ -18,4 +16,3 @@ torch
 python-docx
 python-pptx
 openpyxl
-groq
