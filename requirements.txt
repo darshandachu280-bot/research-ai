@@ -1,4 +1,8 @@
 fastapi
+uvicorn
+pandas
+groq
+python-dotenvfastapi
 pandas
 uvicorn
 sqlalchemy
