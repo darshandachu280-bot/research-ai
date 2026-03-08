@@ -12,7 +12,6 @@ numpy
 transformers
 torch
 python-docx
-
 python-pptx
 openpyxl
 groq
